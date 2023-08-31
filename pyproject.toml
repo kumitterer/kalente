@@ -1,0 +1,32 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "kalente"
+version = "0.1.0"
+authors = [
+  { name="Kumi Mitterer", email="kalente@kumi.email" },
+]
+description = "Simple Python script to generate a printable calendar"
+readme = "README.md"
+license = { file="LICENSE" }
+requires-python = ">=3.10"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    "holidays",
+    "pdfkit",
+    "jinja2",
+    "python-dateutil",
+]
+
+[project.urls]
+"Homepage" = "https://kumig.it/kumitterer/kalente"
+"Bug Tracker" = "https://kumig.it/kumitterer/kalente/issues"
+
+[project.scripts]
+kalente = "kalente.__main__:main"

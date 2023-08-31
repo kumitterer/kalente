@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <style>
+            table {
+                width: 100%;
+                border-collapse: collapse;
+            }
+            th {
+                border: 1px solid black;
+                padding: 15px;
+                text-align: center;
+                font-size: large;
+                background-color: #dddddd;
+            }
+            td {
+                border: 1px solid black;
+                height: 675px;
+                vertical-align: top;
+                padding: 5px;
+                background-color: #f8f8f8;
+            }
+            .holiday {
+                background-color: #ff9999; /* For holidays - Red */
+            }
+            .saturday {
+                background-color: #99ccff; /* For Saturday - Blue */
+            }
+            .sunday {
+                background-color: #99ff99; /* For Sunday - Green */
+            }
+            h2 {
+                font-size: 32px;
+            }
+        </style>
+    </head>
+    <body>
+        <h2>Weekly Calendar</h2>
+        <table>
+            <tr>
+                {% for day in week %}
+                    <th>{{ day.day }}<br>{{ day.date }}</th>
+                {% endfor %}
+            </tr>
+            <tr>
+                {% for day in week %}
+                    <td class="{% if day.holiday %}holiday{% elif day.is_weekend and day.day == 'Saturday' %}saturday{% elif day.is_weekend and day.day == 'Sunday' %}sunday{% endif %}">
+                        {% if day.holiday %}
+                            <b>{{ day.holiday }}</b>
+                        {% endif %}
+                    </td>
+                {% endfor %}
+            </tr>
+        </table>
+    </body>
+</html>
