@@ -1,6 +1,6 @@
 # Kalente
 
-![Kalente Logo](img/kalente.png)
+<img src="img/kalente.png" alt="Kalente logo" width="200" height="200" align="right">
 
 Kalente is a simple Python script for generating PDF calendars.
 
