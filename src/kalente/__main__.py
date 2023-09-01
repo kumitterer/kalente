@@ -5,6 +5,7 @@ from argparse import ArgumentParser
 from datetime import date, timedelta
 from pathlib import Path
 from typing import Optional
+from locale import setlocale, LC_ALL
 
 from jinja2 import Environment, FileSystemLoader
 from dateutil.parser import parse
@@ -147,6 +148,9 @@ def main():
     )
 
     args = parser.parse_args()
+
+    # Set locale to en_US.UTF-8 – for now, only English is supported
+    setlocale(LC_ALL, "en_US.UTF-8")
 
     if args.country:
         country_code = args.country.upper()
