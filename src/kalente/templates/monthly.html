@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <style>
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+      th {
+        border: 1px solid black;
+        padding: 15px;
+        text-align: center;
+        background-color: #dddddd;
+      }
+      td {
+        border: 1px solid black;
+        vertical-align: top;
+        padding: 5px;
+        width: 14.28%;
+      }
+      .holiday.other-month {
+        background-color: hsla(0, 100%, 50%, 0.3);
+      }
+      .saturday.other-month {
+        background-color: hsla(240, 100%, 50%, 0.3);
+      }
+      .sunday.other-month {
+        background-color: hsla(120, 100%, 50%, 0.3);
+      }
+      .holiday {
+        background-color: #ff9999; /* For holidays */
+      }
+      .saturday {
+        background-color: #99ccff; /* For Saturday - Blue */
+      }
+      .sunday {
+        background-color: #99ff99; /* For Sunday - Green */
+      }
+      .other-month {
+        background-color: #cccccc; /* For days not in the current month */
+      }
+      h2 {
+        font-size: 32px;
+        page-break-before: always;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="new-page"></div>
+    <h2>Monthly Calendar for {{ month_obj.strftime("%B %Y") }}</h2>
+    <table>
+      <tr>
+        <th>Monday</th>
+        <th>Tuesday</th>
+        <th>Wednesday</th>
+        <th>Thursday</th>
+        <th>Friday</th>
+        <th>Saturday</th>
+        <th>Sunday</th>
+      </tr>
+      {% for week in month %}
+      <tr>
+        {% for day in week %} {% if day %}
+        <td
+          class="{% if day.holiday %}holiday{% elif day.is_weekend and day.day == 'Saturday' %}saturday{% elif day.is_weekend and day.day == 'Sunday' %}sunday{% endif %} {% if day.date_obj.month != month_obj.month %}other-month{% endif %}"
+          style="height: {{ 675 / month|length }}px;"
+        >
+          {{ day.date }}<br />{% if day.holiday %}{{ day.holiday }}{% endif %}
+        </td>
+        {% else %}
+        <td></td>
+        {% endif %} {% endfor %}
+      </tr>
+      {% endfor %}
+    </table>
+  </body>
+</html>
