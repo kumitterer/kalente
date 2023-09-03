@@ -171,8 +171,11 @@ def main():
 
     pages = []
 
+    count = 1
+
     if args.count:
         count = args.count
+
     elif args.end_date:
         end_date = parse(args.end_date).date()
 
