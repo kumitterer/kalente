@@ -123,13 +123,18 @@ def main():
         required=False,
         default="%b %d, %Y",
     )
-    parser.add_argument(
+
+    type_group = parser.add_mutually_exclusive_group()
+    type_group.add_argument(
         "--type",
         "-t",
         help="Type of calendar to generate",
         required=False,
+        choices=["weekly", "monthly"],
         default="weekly",
     )
+    type_group.add_argument('--monthly', action='store_const', const='monthly', dest='type')
+    type_group.add_argument('--weekly', action='store_const', const='weekly', dest='type')
 
     count_group = parser.add_mutually_exclusive_group()
     count_group.add_argument(
