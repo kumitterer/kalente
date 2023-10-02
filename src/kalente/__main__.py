@@ -133,8 +133,8 @@ def main():
         choices=["weekly", "monthly"],
         default="weekly",
     )
-    type_group.add_argument('--monthly', action='store_const', const='monthly', dest='type')
-    type_group.add_argument('--weekly', action='store_const', const='weekly', dest='type')
+    type_group.add_argument('--monthly', action='store_const', const='monthly', dest='type', help="Generate monthly calendar. Shortcut for --type monthly.")
+    type_group.add_argument('--weekly', action='store_const', const='weekly', dest='type', help="Generate weekly calendar. This is the default. Shortcut for --type weekly.")
 
     count_group = parser.add_mutually_exclusive_group()
     count_group.add_argument(
