@@ -40,6 +40,22 @@ def get_month(
 
     return month_weeks
 
+def get_day(
+    for_date: date = None,
+    country_code: Optional[str] = None,
+    date_format: str = "%b %d, %Y",
+):
+    for_date = for_date or date.today()
+    day = for_date
+
+    day_info = {
+        "date_obj": day,
+        "day": day.strftime("%A"),
+        "date": day.strftime(date_format),
+        "holiday": holidays.CountryHoliday(country_code, years=[for_date.year]).get(day),
+        "is_weekend": (day.weekday() in [5, 6]),
+    }
+    return day_info
 
 def get_week(
     for_date: date = None,
@@ -76,9 +92,7 @@ def generate_monthly_html(month):
     file_loader = FileSystemLoader(Path(__file__).parent.absolute() / "templates")
     env = Environment(loader=file_loader)
     template = env.get_template("monthly.html")
-    return template.render(
-        month=month, month_obj=month[1][0]["date_obj"]
-    )
+    return template.render(month=month, month_obj=month[1][0]["date_obj"])
 
 
 def generate_weekly_html(week):
@@ -87,12 +101,15 @@ def generate_weekly_html(week):
     template = env.get_template("weekly.html")
     return template.render(week=week)
 
+def generate_daily_html(day):
+    file_loader = FileSystemLoader(Path(__file__).parent.absolute() / "templates")
+    env = Environment(loader=file_loader)
+    template = env.get_template("daily.html")
+    return template.render(day=day)
 
-def convert_html_to_pdf(content, output_filename):
-    options = {
-        "page-size": "A4",
-        "orientation": "Landscape",
-    }
+def convert_html_to_pdf(content, output_filename, options=None):
+    options.setdefault("page-size", "A4")
+    options.setdefault("orientation", "Landscape")
     pdfkit.from_string(content, output_filename, options=options)
 
 
@@ -130,11 +147,30 @@ def main():
         "-t",
         help="Type of calendar to generate",
         required=False,
-        choices=["weekly", "monthly"],
+        choices=["weekly", "monthly", "daily"],
         default="weekly",
     )
-    type_group.add_argument('--monthly', action='store_const', const='monthly', dest='type', help="Generate monthly calendar. Shortcut for --type monthly.")
-    type_group.add_argument('--weekly', action='store_const', const='weekly', dest='type', help="Generate weekly calendar. This is the default. Shortcut for --type weekly.")
+    type_group.add_argument(
+        "--monthly",
+        action="store_const",
+        const="monthly",
+        dest="type",
+        help="Generate monthly calendar. Shortcut for --type monthly.",
+    )
+    type_group.add_argument(
+        "--weekly",
+        action="store_const",
+        const="weekly",
+        dest="type",
+        help="Generate weekly calendar. This is the default. Shortcut for --type weekly.",
+    )
+    type_group.add_argument(
+        "--daily",
+        action="store_const",
+        const="daily",
+        dest="type",
+        help="Generate daily calendar. Shortcut for --type daily.",
+    )
 
     count_group = parser.add_mutually_exclusive_group()
     count_group.add_argument(
@@ -199,7 +235,13 @@ def main():
                 except ValueError:
                     start_date = start_date.replace(year=start_date.year + 1, month=1)
 
-    if args.type == "weekly":
+    if args.type == "daily":
+        for i in range(count):
+            day = get_day(for_date, country_code, args.date_format)
+            html_content = generate_daily_html(day)
+            pages.append(html_content)
+            for_date = day["date_obj"] + timedelta(days=1)
+    elif args.type == "weekly":
         for i in range(count):
             week = get_week(for_date, country_code, args.date_format)
             html_content = generate_weekly_html(week)
@@ -214,7 +256,8 @@ def main():
     else:
         raise NotImplementedError(f"Calendar type {args.type} is not supported")
 
-    convert_html_to_pdf("\n".join(pages), args.output)
+    conversion_options = {"orientation": "Portrait"} if args.type == "daily" else {}
+    convert_html_to_pdf("\n".join(pages), args.output, options=conversion_options)
 
 
 if __name__ == "__main__":
