@@ -87,25 +87,25 @@ def get_week(
         week_days.append(day_info)
     return week_days
 
+def generate_html(content, content_type, template_path: str = None):
+    if not template_path:
+        template_name = "{}.html".format(content_type)
+        file_loader = FileSystemLoader(Path(__file__).parent.absolute() / "templates")
+    else:
+        template_name = template_path
+        file_loader = FileSystemLoader()
 
-def generate_monthly_html(month):
-    file_loader = FileSystemLoader(Path(__file__).parent.absolute() / "templates")
     env = Environment(loader=file_loader)
-    template = env.get_template("monthly.html")
-    return template.render(month=month, month_obj=month[1][0]["date_obj"])
+    template = env.get_template(template_name)
 
-
-def generate_weekly_html(week):
-    file_loader = FileSystemLoader(Path(__file__).parent.absolute() / "templates")
-    env = Environment(loader=file_loader)
-    template = env.get_template("weekly.html")
-    return template.render(week=week)
-
-def generate_daily_html(day):
-    file_loader = FileSystemLoader(Path(__file__).parent.absolute() / "templates")
-    env = Environment(loader=file_loader)
-    template = env.get_template("daily.html")
-    return template.render(day=day)
+    if content_type == "monthly":
+        return template.render(month=content, month_obj=content[1][0]["date_obj"])
+    elif content_type == "weekly":
+        return template.render(week=content)
+    elif content_type == "daily":
+        return template.render(day=content)
+    else:
+        raise ValueError("Invalid content type: {}".format(content_type))
 
 def convert_html_to_pdf(content, output_filename, options=None):
     options.setdefault("page-size", "A4")
@@ -139,6 +139,13 @@ def main():
         help="Date format to use",
         required=False,
         default="%b %d, %Y",
+    )
+    parser.add_argument(
+        "--template",
+        "-T",
+        help="Template to use",
+        required=False,
+        default=None,
     )
 
     type_group = parser.add_mutually_exclusive_group()
@@ -235,26 +242,22 @@ def main():
                 except ValueError:
                     start_date = start_date.replace(year=start_date.year + 1, month=1)
 
-    if args.type == "daily":
-        for i in range(count):
-            day = get_day(for_date, country_code, args.date_format)
-            html_content = generate_daily_html(day)
-            pages.append(html_content)
-            for_date = day["date_obj"] + timedelta(days=1)
-    elif args.type == "weekly":
-        for i in range(count):
-            week = get_week(for_date, country_code, args.date_format)
-            html_content = generate_weekly_html(week)
-            pages.append(html_content)
-            for_date = week[-1]["date_obj"] + timedelta(days=1)
-    elif args.type == "monthly":
-        for i in range(count):
-            month = get_month(for_date, country_code, args.date_format)
-            html_content = generate_monthly_html(month)
-            pages.append(html_content)
-            for_date = month[1][0]["date_obj"] + timedelta(days=31)
-    else:
-        raise NotImplementedError(f"Calendar type {args.type} is not supported")
+    if not args.type in ["daily", "weekly", "monthly"]:
+        raise ValueError(f"Invalid calendar type: {args.type}")
+
+    for i in range(count):
+        data = ({
+            "daily": get_day,
+            "weekly": get_week,
+            "monthly": get_month
+        }[args.type])(for_date, country_code, args.date_format)
+        html_content = generate_html(data, args.type, args.template)
+        pages.append(html_content)
+        for_date = {
+            "daily": lambda x: x["date_obj"] + timedelta(days=1),
+            "weekly": lambda x: x[-1]["date_obj"] + timedelta(days=1),
+            "monthly": lambda x: x[1][0]["date_obj"] + timedelta(days=31)
+        }[args.type](data)
 
     conversion_options = {"orientation": "Portrait"} if args.type == "daily" else {}
     convert_html_to_pdf("\n".join(pages), args.output, options=conversion_options)
