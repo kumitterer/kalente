@@ -13,33 +13,6 @@ from dateutil.parser import parse
 import math
 
 
-def get_month(
-    for_date: date = None,
-    country_code: Optional[str] = None,
-    date_format: str = "%b %d, %Y",
-):
-    for_date = for_date or date.today()
-    month_start = for_date.replace(day=1)
-
-    month_weeks = []
-
-    for i in range(6):
-        week = get_week(
-            for_date=month_start + timedelta(days=i * 7),
-            country_code=country_code,
-            date_format=date_format,
-        )
-
-        if (
-            week[0]["date_obj"].month != for_date.month
-            and week[-1]["date_obj"].month != for_date.month
-        ):
-            break
-
-        month_weeks.append(week)
-
-    return month_weeks
-
 def get_day(
     for_date: date = None,
     country_code: Optional[str] = None,
@@ -87,6 +60,53 @@ def get_week(
         week_days.append(day_info)
     return week_days
 
+def get_month(
+    for_date: date = None,
+    country_code: Optional[str] = None,
+    date_format: str = "%b %d, %Y",
+):
+    for_date = for_date or date.today()
+    month_start = for_date.replace(day=1)
+
+    month_weeks = []
+
+    for i in range(6):
+        week = get_week(
+            for_date=month_start + timedelta(days=i * 7),
+            country_code=country_code,
+            date_format=date_format,
+        )
+
+        if (
+            week[0]["date_obj"].month != for_date.month
+            and week[-1]["date_obj"].month != for_date.month
+        ):
+            break
+
+        month_weeks.append(week)
+
+    return month_weeks
+
+def get_year(
+    for_date: date = None,
+    country_code: Optional[str] = None,
+    date_format: str = "%b %d, %Y",
+):
+    for_date = for_date or date.today()
+    year_start = for_date.replace(month=1, day=1)
+
+    year_months = []
+
+    for i in range(12):
+        month = get_month(
+            for_date=year_start.replace(month=i + 1),
+            country_code=country_code,
+            date_format=date_format,
+        )
+        year_months.append(month)
+
+    return year_months
+
 def generate_html(content, content_type, template_path: str = None):
     if not template_path:
         template_name = "{}.html".format(content_type)
@@ -98,7 +118,9 @@ def generate_html(content, content_type, template_path: str = None):
     env = Environment(loader=file_loader)
     template = env.get_template(template_name)
 
-    if content_type == "monthly":
+    if content_type == "yearly":
+        return template.render(year=content)
+    elif content_type == "monthly":
         return template.render(month=content, month_obj=content[1][0]["date_obj"])
     elif content_type == "weekly":
         return template.render(week=content)
@@ -154,8 +176,15 @@ def main():
         "-t",
         help="Type of calendar to generate",
         required=False,
-        choices=["weekly", "monthly", "daily"],
+        choices=["weekly", "monthly", "daily", "yearly"],
         default="weekly",
+    )
+    type_group.add_argument(
+        "--yearly",
+        action="store_const",
+        const="yearly",
+        dest="type",
+        help="Generate yearly calendar. Shortcut for --type yearly.",
     )
     type_group.add_argument(
         "--monthly",
@@ -242,21 +271,26 @@ def main():
                 except ValueError:
                     start_date = start_date.replace(year=start_date.year + 1, month=1)
 
-    if not args.type in ["daily", "weekly", "monthly"]:
+        elif args.type == "yearly":
+            count = end_date.year - for_date.year + 1
+
+    if not args.type in ["daily", "weekly", "monthly", "yearly"]:
         raise ValueError(f"Invalid calendar type: {args.type}")
 
     for i in range(count):
         data = ({
             "daily": get_day,
             "weekly": get_week,
-            "monthly": get_month
+            "monthly": get_month,
+            "yearly": get_year
         }[args.type])(for_date, country_code, args.date_format)
         html_content = generate_html(data, args.type, args.template)
         pages.append(html_content)
         for_date = {
             "daily": lambda x: x["date_obj"] + timedelta(days=1),
             "weekly": lambda x: x[-1]["date_obj"] + timedelta(days=1),
-            "monthly": lambda x: x[1][0]["date_obj"] + timedelta(days=31)
+            "monthly": lambda x: x[1][0]["date_obj"] + timedelta(days=31),
+            "yearly": lambda x: x[11][5][0]["date_obj"] + timedelta(days=365)
         }[args.type](data)
 
     conversion_options = {"orientation": "Portrait"} if args.type == "daily" else {}
