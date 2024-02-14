@@ -57,9 +57,7 @@
     {% set splits = (0, 6), (6, 12) %}
     {% for start, end in splits %}
       <h2>Yearly Calendar for {{ year.1.1.1.date_obj.year }}</h2>
-      {% if logo %}
-        <img class="logo" src="{{ logo }}" alt="Logo">
-      {% endif %}
+      {% if logo %}<img class="logo" src="{{ logo }}" alt="Logo">{% endif %}
       <table class="yearly-calendar">
         <tr>
           {% for month in year %}

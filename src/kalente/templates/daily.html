@@ -44,19 +44,19 @@
     </style>
   </head>
   <body>
-    {% if logo %}
-      <img class="logo" src="{{ logo }}" alt="Logo"> 
-    {% endif %}
+    {% if logo %}<img class="logo" src="{{ logo }}" alt="Logo">{% endif %}
     <h2>Day Planner</h2>
     <table>
       <tr>
-        <th class="{% if day.holiday %}holiday{% elif day.is_weekend and day.day == 'Saturday' %}saturday{% elif day.is_weekend and day.day == 'Sunday' %}sunday{% endif %}">{{ day.day }}<br />{{ day.date }}</th>
+        <th class="{% if day.holiday %}holiday{% elif day.is_weekend and day.day == 'Saturday' %}saturday{% elif day.is_weekend and day.day == 'Sunday' %}sunday{% endif %}">
+          {{ day.day }}
+          <br />
+          {{ day.date }}
+        </th>
       </tr>
       <tr>
         <td>
-          {% if day.holiday %}
-          <b>{{ day.holiday }}</b>
-          {% endif %}
+          {% if day.holiday %}<b>{{ day.holiday }}</b>{% endif %}
         </td>
       </tr>
     </table>
