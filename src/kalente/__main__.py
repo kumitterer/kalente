@@ -1,164 +1,16 @@
 import holidays
-import pdfkit
 
 from argparse import ArgumentParser
-from datetime import date, timedelta
-from pathlib import Path
-from typing import Optional
+from datetime import timedelta
 from locale import setlocale, LC_ALL
-from base64 import b64encode
 
-from jinja2 import Environment, FileSystemLoader
 from dateutil.parser import parse
+
+from .classes.calendar import Calendar
 
 import math
 
-NO_LOGO = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg"/>'
-
-
-def get_day(
-    for_date: date = None,
-    country_code: Optional[str] = None,
-    date_format: str = "%b %d, %Y",
-):
-    for_date = for_date or date.today()
-    day = for_date
-
-    day_info = {
-        "date_obj": day,
-        "day": day.strftime("%A"),
-        "date": day.strftime(date_format),
-        "holiday": holidays.CountryHoliday(country_code, years=[for_date.year]).get(
-            day
-        ),
-        "is_weekend": (day.weekday() in [5, 6]),
-    }
-    return day_info
-
-
-def get_week(
-    for_date: date = None,
-    country_code: Optional[str] = None,
-    date_format: str = "%b %d, %Y",
-):
-    week_days = []
-
-    for_date = for_date or date.today()
-    week_start = for_date - timedelta(days=for_date.weekday())
-    week_end = week_start + timedelta(days=6)
-
-    if country_code:
-        holiday_list = holidays.CountryHoliday(
-            country_code, years=[for_date.year, week_end.year, week_start.year]
-        )
-    else:
-        holiday_list = {}
-
-    for i in range(7):
-        day = week_start + timedelta(days=i)
-        day_info = {
-            "date_obj": day,
-            "day": day.strftime("%A"),
-            "date": day.strftime(date_format),
-            "holiday": holiday_list.get(day),
-            "is_weekend": (day.weekday() in [5, 6]),
-        }
-        week_days.append(day_info)
-    return week_days
-
-
-def get_month(
-    for_date: date = None,
-    country_code: Optional[str] = None,
-    date_format: str = "%b %d, %Y",
-):
-    for_date = for_date or date.today()
-    month_start = for_date.replace(day=1)
-
-    month_weeks = []
-
-    for i in range(6):
-        week = get_week(
-            for_date=month_start + timedelta(days=i * 7),
-            country_code=country_code,
-            date_format=date_format,
-        )
-
-        if (
-            week[0]["date_obj"].month != for_date.month
-            and week[-1]["date_obj"].month != for_date.month
-        ):
-            break
-
-        month_weeks.append(week)
-
-    return month_weeks
-
-
-def get_year(
-    for_date: date = None,
-    country_code: Optional[str] = None,
-    date_format: str = "%b %d, %Y",
-):
-    for_date = for_date or date.today()
-    year_start = for_date.replace(month=1, day=1)
-
-    year_months = []
-
-    for i in range(12):
-        month = get_month(
-            for_date=year_start.replace(month=i + 1),
-            country_code=country_code,
-            date_format=date_format,
-        )
-        year_months.append(month)
-
-    return year_months
-
-
-def generate_html(
-    content, content_type, template_path: str = None, logo_path: str = None
-):
-    if not template_path:
-        template_name = "{}.html".format(content_type)
-        file_loader = FileSystemLoader(Path(__file__).parent.absolute() / "templates")
-    else:
-        template_name = template_path
-        file_loader = FileSystemLoader()
-
-    if logo_path is None:
-        logo_path = Path(__file__).parent / "static" / "logo.png"
-
-    if logo_path:
-        # Let it throw, let it throw, let it throw...
-        with Path(logo_path).open("rb") as logo_file:
-            logo = b64encode(logo_file.read()).decode("utf-8")
-            mime_type = (
-                "image/png" if str(logo_path).endswith(".png") else "image/jpeg"
-            )  # Doesn't matter much anyway.
-            data_uri = f"data:image/png;base64,{logo}"
-
-    env = Environment(loader=file_loader)
-    template = env.get_template(template_name)
-
-    context = {"logo": data_uri}
-
-    if content_type == "yearly":
-        return template.render(year=content, **context)
-    elif content_type == "monthly":
-        return template.render(month=content, **context)
-    elif content_type == "weekly":
-        return template.render(week=content, **context)
-    elif content_type == "daily":
-        return template.render(day=content, **context)
-    else:
-        raise ValueError("Invalid content type: {}".format(content_type))
-
-
-def convert_html_to_pdf(content, output_filename, options=None):
-    options.setdefault("page-size", "A4")
-    options.setdefault("orientation", "Landscape")
-    pdfkit.from_string(content, output_filename, options=options)
+NO_LOGO = "data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=="
 
 
 def main():
@@ -314,7 +166,7 @@ def main():
         elif args.type == "yearly":
             count = end_date.year - for_date.year + 1
 
-    if not args.type in ["daily", "weekly", "monthly", "yearly"]:
+    if args.type not in ["daily", "weekly", "monthly", "yearly"]:
         raise ValueError(f"Invalid calendar type: {args.type}")
 
     if args.no_logo:
@@ -322,16 +174,18 @@ def main():
     else:
         logo_path = args.logo
 
+    generator = Calendar(country_code, args.date_format)
+
     for i in range(count):
         data = (
             {
-                "daily": get_day,
-                "weekly": get_week,
-                "monthly": get_month,
-                "yearly": get_year,
+                "daily": generator.get_day,
+                "weekly": generator.get_week,
+                "monthly": generator.get_month,
+                "yearly": generator.get_year,
             }[args.type]
-        )(for_date, country_code, args.date_format)
-        html_content = generate_html(data, args.type, args.template, logo_path)
+        )(for_date)
+        html_content = Calendar.generate_html(data, args.type, args.template, logo_path)
         pages.append(html_content)
         for_date = {
             "daily": lambda x: x["date_obj"] + timedelta(days=1),
@@ -341,7 +195,9 @@ def main():
         }[args.type](data)
 
     conversion_options = {"orientation": "Portrait"} if args.type == "daily" else {}
-    convert_html_to_pdf("\n".join(pages), args.output, options=conversion_options)
+    Calendar.convert_html_to_pdf(
+        "\n".join(pages), args.output, options=conversion_options
+    )
 
 
 if __name__ == "__main__":
