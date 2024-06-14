@@ -72,6 +72,29 @@ kalente --help
 For example, you may want to look into the `--end-date` and `--count` options
 to generate calendars for multiple weeks or months.
 
+## Programmatic Usage
+
+Kalente can also be used programmatically. Here's an example of how you can
+generate a weekly calendar using Kalente:
+
+```python
+from kalente import Calendar
+from datetime import date
+
+# Create a Calendar object, optionally specifying the country to use
+# for holidays, and a date format.
+calendar = Calendar(country_code="AT", date_format="%d %B %Y")
+
+# Get week data for the week of January 1st, 2021.
+data = calendar.get_week(date(2021, 1, 1))
+
+# Generate HTML for the week.
+html = Calendar.generate_html(data, type="weekly")
+
+# Generate a PDF file for the week.
+Calendar.convert_html_to_pdf(html, "weekly.pdf")
+```
+
 ## License
 
 Kalente is licensed under the MIT license. See the [LICENSE](LICENSE) file for

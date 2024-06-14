@@ -124,7 +124,7 @@ class Calendar:
             raise ValueError("Invalid content type: {}".format(content_type))
 
     @staticmethod
-    def convert_html_to_pdf(content, output_filename, options=None):
+    def convert_html_to_pdf(content, output_filename, options={}):
         options.setdefault("page-size", "A4")
         options.setdefault("orientation", "Landscape")
         pdfkit.from_string(content, output_filename, options=options)
