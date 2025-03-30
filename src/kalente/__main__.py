@@ -191,7 +191,7 @@ def main():
             "daily": lambda x: x["date_obj"] + timedelta(days=1),
             "weekly": lambda x: x[-1]["date_obj"] + timedelta(days=1),
             "monthly": lambda x: x[1][0]["date_obj"] + timedelta(days=31),
-            "yearly": lambda x: x[11][5][0]["date_obj"] + timedelta(days=365),
+            "yearly": lambda x: x[-1][-1][0]["date_obj"] + timedelta(days=365),
         }[args.type](data)
 
     conversion_options = {"orientation": "Portrait"} if args.type == "daily" else {}
